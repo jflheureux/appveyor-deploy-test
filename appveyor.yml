@@ -1,0 +1,50 @@
+version: 1.0.{build}
+
+branches:
+  only:
+    - master
+
+image: Visual Studio 2017
+
+install:
+  - ps: |
+      if ($env:APPVEYOR_REPO_TAG -eq "true") {
+          # Package for production
+          $env:DEPLOY_ENVIRONMENT="prod"
+      } else {
+          # Package for staging
+          $env:DEPLOY_ENVIRONMENT="staging"
+      }
+  - ps: Copy-Item -Path ".\$env:DEPLOY_ENVIRONMENT.txt" -Destination ".\BuildArtifact.txt"
+
+build: off
+
+artifacts:
+  - path: BuildArtifact.txt
+    name: BuildArtifact
+
+before_deploy:
+  - ps: Write-Host "Running before_deploy!"
+
+deploy:
+  - provider: Environment
+    name: appveyor-deploy-test-staging
+    on:
+      branch: master #Does it deploy to staging even on tags?
+
+after_deploy: #Does after_deploy run even if deploy provider conditions are false
+  - ps: |
+      if ($env:APPVEYOR_REPO_TAG -eq "true") {
+          Write-Host "Chance to deploy to production in after_deploy!"
+      }
+
+on_success:
+  - ps: |
+      if ($env:APPVEYOR_REPO_TAG -eq "true") {
+          Write-Host "Chance to deploy to production in on_success!"
+      }
+
+notifications:
+  - provider: Slack
+    incoming_webhook:
+      secure: 5tB2yxNNtAeh5Qf6ElBKvUIJrRLitCLrmN82qnHGp5iRoQGud71J/EsiFy7zF61Uj18acJtOxV6dLTy+ZR95koi71iKkwNev7iLUuEmbgLE=

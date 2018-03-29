@@ -30,7 +30,8 @@ deploy:
   - provider: Environment
     name: appveyor-deploy-test-staging
     on:
-      branch: master #Does it deploy to staging even on tags?
+      branch: master # Not enough to prevent staging deploy on tags.
+      appveyor_repo_tag: false
 
 after_deploy: #Does after_deploy run even if deploy provider conditions are false
   - ps: |

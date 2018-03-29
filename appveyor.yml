@@ -9,12 +9,13 @@ image: Visual Studio 2017
 install:
   - ps: |
       if ($env:APPVEYOR_REPO_TAG -eq "true") {
-          # Package for production
+          # Build/Package for production
           $env:DEPLOY_ENVIRONMENT="prod"
       } else {
-          # Package for staging
+          # Build/Package for staging
           $env:DEPLOY_ENVIRONMENT="staging"
       }
+  - ps: Write-Host "$env:DEPLOY_ENVIRONMENT build"
   - ps: Copy-Item -Path ".\$env:DEPLOY_ENVIRONMENT.txt" -Destination ".\BuildArtifact.txt"
 
 build: off
@@ -23,26 +24,24 @@ artifacts:
   - path: BuildArtifact.txt
     name: BuildArtifact
 
-before_deploy:
-  - ps: Write-Host "Running before_deploy!"
+before_deploy: # Only run for staging builds
+  - ps: Write-Host "Running before_deploy for staging build..."
 
-deploy:
+deploy: # Only run for staging builds
   - provider: Environment
     name: appveyor-deploy-test-staging
     on:
-      branch: master # Not enough to prevent staging deploy on tags.
+      branch: master
       appveyor_repo_tag: false
 
-after_deploy: #Does after_deploy run even if deploy provider conditions are false
-  - ps: |
-      if ($env:APPVEYOR_REPO_TAG -eq "true") {
-          Write-Host "Chance to deploy to production in after_deploy!"
-      }
+after_deploy: # Only run for staging builds
+  - ps: Write-Host "Running after_deploy for staging build..."
 
 on_success:
   - ps: |
       if ($env:APPVEYOR_REPO_TAG -eq "true") {
-          Write-Host "Chance to deploy to production in on_success!"
+          # Only run for production builds
+          Write-Host "Deploying to production..."
       }
 
 notifications:

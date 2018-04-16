@@ -6,7 +6,7 @@ branches:
 
 image: Visual Studio 2017
 
-install:
+init:
   - ps: |
       if ($env:APPVEYOR_REPO_TAG -eq "true") {
           # Build/Package for production
@@ -16,6 +16,8 @@ install:
           $env:DEPLOY_ENVIRONMENT="staging"
       }
   - ps: Write-Host "$env:DEPLOY_ENVIRONMENT build"
+
+install:
   - ps: Copy-Item -Path ".\$env:DEPLOY_ENVIRONMENT.txt" -Destination ".\BuildArtifact.txt"
 
 build: off
@@ -24,25 +26,15 @@ artifacts:
   - path: BuildArtifact.txt
     name: BuildArtifact
 
-before_deploy: # Only run for staging builds
-  - ps: Write-Host "Running before_deploy for staging build..."
-
-deploy: # Only run for staging builds
+deploy:
   - provider: Environment
     name: appveyor-deploy-test-staging
     on:
-      branch: master
-      appveyor_repo_tag: false
-
-after_deploy: # Only run for staging builds
-  - ps: Write-Host "Running after_deploy for staging build..."
-
-on_success:
-  - ps: |
-      if ($env:APPVEYOR_REPO_TAG -eq "true") {
-          # Only run for production builds
-          Write-Host "Deploying to production..."
-      }
+      DEPLOY_ENVIRONMENT: staging
+  - provider: Environment
+    name: appveyor-deploy-test-prod
+    on:
+      DEPLOY_ENVIRONMENT: prod
 
 notifications:
   - provider: Slack
